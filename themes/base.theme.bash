@@ -3,6 +3,7 @@
 THEME_PROMPT_HOST='\H'
 SCM_THEME_PROMPT_DIRTY=' ✗'
 SCM_THEME_PROMPT_CLEAN=' ✓'
+SCM_THEME_PROMPT_AHEAD=" ↑"
 SCM_THEME_PROMPT_BEHIND=" ↓"
 SCM_THEME_PROMPT_PREFIX=' |'
 SCM_THEME_PROMPT_SUFFIX='|'
@@ -75,9 +76,16 @@ function current_branch() {
   echo ${ref#refs/heads/}
 }
 
+# Checks if there are commits ahead from remote
+function git_prompt_ahead() {
+  if [[ -n $(git log origin/$(current_branch)...HEAD --right-only 2> /dev/null | grep '^commit') ]]; then
+    echo -e "$SCM_THEME_PROMPT_AHEAD"
+  fi
+}
+
 # Checks if there are commits available from remote
 function git_prompt_behind() {
-  if [[ -n $(git log origin/$(current_branch)...HEAD 2> /dev/null | grep '^commit') ]]; then
+  if [[ -n $(git log origin/$(current_branch)...HEAD --left-only 2> /dev/null | grep '^commit') ]]; then
     echo -e "$SCM_THEME_PROMPT_BEHIND"
   fi
 }
@@ -85,10 +93,10 @@ function git_prompt_behind() {
 function git_prompt_vars {
   if [[ -n $(git status -s 2> /dev/null |grep -v ^# |grep -v "working directory clean") ]]; then
     SCM_DIRTY=1
-     SCM_STATE=${GIT_THEME_PROMPT_DIRTY:-$SCM_THEME_PROMPT_DIRTY}
+      SCM_STATE=${GIT_THEME_PROMPT_DIRTY:-$SCM_THEME_PROMPT_DIRTY}
   else
     SCM_DIRTY=0
-     SCM_STATE=${GIT_THEME_PROMPT_CLEAN:-$SCM_THEME_PROMPT_CLEAN}
+      SCM_STATE=${GIT_THEME_PROMPT_CLEAN:-$SCM_THEME_PROMPT_CLEAN}
   fi
   SCM_PREFIX=${GIT_THEME_PROMPT_PREFIX:-$SCM_THEME_PROMPT_PREFIX}
   SCM_SUFFIX=${GIT_THEME_PROMPT_SUFFIX:-$SCM_THEME_PROMPT_SUFFIX}
@@ -159,7 +167,7 @@ function virtualenv_prompt {
 # backwards-compatibility
 function git_prompt_info {
   git_prompt_vars
-  echo -e "$SCM_PREFIX$SCM_BRANCH$SCM_STATE$(git_prompt_behind)$SCM_SUFFIX"
+  echo -e "$SCM_PREFIX$SCM_BRANCH$SCM_STATE$(git_prompt_behind)$(git_prompt_ahead)$SCM_SUFFIX"
 }
 
 function svn_prompt_info {
