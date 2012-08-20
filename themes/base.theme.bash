@@ -3,6 +3,7 @@
 THEME_PROMPT_HOST='\H'
 SCM_THEME_PROMPT_DIRTY=' ✗'
 SCM_THEME_PROMPT_CLEAN=' ✓'
+SCM_THEME_PROMPT_BEHIND=" ↓"
 SCM_THEME_PROMPT_PREFIX=' |'
 SCM_THEME_PROMPT_SUFFIX='|'
 
@@ -67,6 +68,18 @@ function scm_prompt_info {
   [[ $SCM == $SCM_GIT ]] && git_prompt_info && return
   [[ $SCM == $SCM_HG ]] && hg_prompt_info && return
   [[ $SCM == $SCM_SVN ]] && svn_prompt_info && return
+}
+
+function current_branch() {
+  ref=$(git symbolic-ref HEAD 2> /dev/null) || return
+  echo ${ref#refs/heads/}
+}
+
+# Checks if there are commits available from remote
+function git_prompt_behind() {
+  if [[ -n $(git log origin/$(current_branch)...HEAD 2> /dev/null | grep '^commit') ]]; then
+    echo -e "$SCM_THEME_PROMPT_BEHIND"
+  fi
 }
 
 function git_prompt_vars {
@@ -146,7 +159,7 @@ function virtualenv_prompt {
 # backwards-compatibility
 function git_prompt_info {
   git_prompt_vars
-  echo -e "$SCM_PREFIX$SCM_BRANCH$SCM_STATE$SCM_SUFFIX"
+  echo -e "$SCM_PREFIX$SCM_BRANCH$SCM_STATE$(git_prompt_behind)$SCM_SUFFIX"
 }
 
 function svn_prompt_info {
