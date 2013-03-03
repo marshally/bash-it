@@ -77,7 +77,7 @@ function current_branch() {
 }
 
 function remote_head() {
-  remote_head=$(git ls-remote origin -h refs/heads/$(current_branch) | cut -c 1-40) || return
+  remote_head=$(git ls-remote origin -h refs/heads/$(current_branch) 2> /dev/null | cut -c 1-40) || return
   echo $remote_head
 }
 
@@ -89,10 +89,21 @@ function git_prompt_ahead() {
 }
 
 # Checks if there are commits available from remote
-function git_prompt_behind() {
+function git_prompt_behind_fast() {
+  if [[ -n $(git log origin/$(current_branch)...HEAD --left-only 2> /dev/null | grep '^commit') ]]; then
+    echo -e "$SCM_THEME_PROMPT_BEHIND"
+  fi
+}
+
+function git_prompt_behind_slow() {
   if [[ -n $(git rev-list $(remote_head) 2>&1 | grep "bad object") ]]; then
     echo -e "$SCM_THEME_PROMPT_BEHIND"
   fi
+}
+
+function git_prompt_behind() {
+  # export LAST_GIT_REPO=$(pwd)
+  echo $(git_prompt_behind_fast)
 }
 
 function git_prompt_vars {
